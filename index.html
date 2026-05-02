@@ -317,7 +317,6 @@ body {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
-  display: none;
 }
 
 .negative-section h3 {
@@ -396,6 +395,26 @@ body {
   color: var(--text);
   min-height: 40px;
   margin-bottom: 1rem;
+}
+
+.brief-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.brief-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+
+.brief-value {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
 }
 
 .output-meta-row {
@@ -541,6 +560,16 @@ body {
     <div class="output-box">
       <label>Промпт для Suno v5</label>
       <div class="output-text" id="outputText"></div>
+      <div class="brief-grid">
+        <div class="brief-block">
+          <label>Style tags</label>
+          <div class="brief-value" id="styleTagsText">—</div>
+        </div>
+        <div class="brief-block">
+          <label>Production notes</label>
+          <div class="brief-value" id="prodNotesText">—</div>
+        </div>
+      </div>
       <div class="output-meta-row">
         <div class="meta-block">
           <label>BPM</label>
@@ -710,6 +739,32 @@ const state = {
 
 const catOrder = ['purpose','emotion','rhythm','palette','vocals','era','structure'];
 
+const COMPOSER = {
+  bpmPriority: ['rhythm', 'purpose', 'emotion'],
+  rhythmBuckets: {
+    floating_ambient: [60, 80],
+    steady_groove: [90, 115],
+    syncopated: [90, 112],
+    gradual_build: [118, 132],
+    minimal_repetitive: [110, 126],
+    beat_switches: [85, 118],
+    broken_rhythm: [118, 145],
+    explosive_drops: [130, 155],
+    fast_paced: [150, 178]
+  },
+  genreRuleBoosts: [
+    { when: ['analog_synths','retro_80s','dreamy','airy_female'], boost: { 'Synth-pop': 4, 'Dream Pop': 4 } },
+    { when: ['distorted_guitars','aggressive','live_drums'], boost: { 'Alternative Rock': 4, 'Hard Rock': 4 } },
+    { when: ['cinematic','cinematic_strings','choir'], boost: { 'Film Score': 4, 'Orchestral': 3 } },
+    { when: ['indie_bedroom','whispery','intimate'], boost: { 'Bedroom Pop': 4, 'Indie Pop': 2 } }
+  ],
+  conflictRules: [
+    { negative: 'no_vocals', selectedCats: ['vocals'], message: 'instrumental focus (no lead vocals)' },
+    { negative: 'no_orchestral', selectedIds: ['cinematic_strings', 'choir'], message: 'minimal orchestral color' },
+    { negative: 'no_aggressive_drums', selectedIds: ['explosive_drops', 'aggressive', 'live_drums'], message: 'controlled transient dynamics' }
+  ]
+};
+
 const $ = id => document.getElementById(id);
 
 function init() {
@@ -859,11 +914,7 @@ function goNext() {
   if (state.currentStep < state.totalSteps - 1) {
     state.currentStep++;
     showStep(state.currentStep);
-    if (state.currentStep === state.totalSteps - 1) {
-      $('negativeSection').style.display = '';
-    }
   } else {
-    $('negativeSection').style.display = '';
     generate();
   }
 }
@@ -883,7 +934,6 @@ function resetAll() {
   document.querySelectorAll('.negative-pill').forEach(c => c.classList.remove('selected'));
   showStep(0);
   $('outputSection').classList.remove('visible');
-  $('negativeSection').style.display = 'none';
   generate();
   toast('Сброшено');
 }
@@ -892,22 +942,60 @@ function getCard(catKey, cardId) {
   return DATA.categories[catKey].cards.find(c => c.id === cardId);
 }
 
+function joinNatural(items) {
+  if (items.length <= 1) return items[0] || '';
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+}
+
+function applyGenreRuleBoosts(weights, selectedSet) {
+  COMPOSER.genreRuleBoosts.forEach(rule => {
+    const ok = rule.when.every(id => selectedSet.has(id));
+    if (!ok) return;
+    Object.entries(rule.boost).forEach(([genre, points]) => {
+      weights[genre] = (weights[genre] || 0) + points;
+    });
+  });
+}
+
+function computeBpmSuggestion(groupedCards, allBPMs) {
+  for (const catKey of COMPOSER.bpmPriority) {
+    const cards = groupedCards[catKey] || [];
+    if (catKey === 'rhythm' && cards.length > 0) {
+      const mapped = cards.map(c => COMPOSER.rhythmBuckets[c.id]).filter(Boolean);
+      if (mapped.length > 0) {
+        const avgMin = Math.round(mapped.reduce((s, v) => s + v[0], 0) / mapped.length);
+        const avgMax = Math.round(mapped.reduce((s, v) => s + v[1], 0) / mapped.length);
+        return `${avgMin}-${avgMax}`;
+      }
+    }
+    const withBpm = cards.filter(c => c.bpm);
+    if (withBpm.length > 0) {
+      const avgMin = Math.round(withBpm.reduce((s, c) => s + c.bpm[0], 0) / withBpm.length);
+      const avgMax = Math.round(withBpm.reduce((s, c) => s + c.bpm[1], 0) / withBpm.length);
+      return `${avgMin}-${avgMax}`;
+    }
+  }
+  if (allBPMs.length === 0) return '—';
+  const avgMin = Math.round(allBPMs.reduce((s, v) => s + v[0], 0) / allBPMs.length);
+  const avgMax = Math.round(allBPMs.reduce((s, v) => s + v[1], 0) / allBPMs.length);
+  return `${avgMin}-${avgMax}`;
+}
+
 function generate() {
   const genreWeights = {};
   const allBPMs = [];
   const allTags = [];
-  const purposeLabels = [];
-  const emotionLabels = [];
-  const paletteLabels = [];
-  const vocalLabels = [];
-  const eraLabels = [];
-  const rhythmLabels = [];
+  const selectedIds = new Set();
+  const groupedCards = { purpose: [], emotion: [], rhythm: [], palette: [], vocals: [], era: [], structure: [] };
   let structureText = '';
 
   catOrder.forEach(ck => {
     state.selections[ck].forEach(id => {
       const c = getCard(ck, id);
       if (!c) return;
+      selectedIds.add(id);
+      groupedCards[ck].push(c);
       c.tags.forEach(t => allTags.push(t));
       if (c.genres) {
         for (const [g, w] of Object.entries(c.genres)) {
@@ -916,51 +1004,39 @@ function generate() {
       }
       if (c.bpm) allBPMs.push(c.bpm);
       if (c.structure) structureText = c.structure;
-
-      if (ck === 'purpose') purposeLabels.push(c.label);
-      if (ck === 'emotion') emotionLabels.push(c.label);
-      if (ck === 'palette') paletteLabels.push(c.label);
-      if (ck === 'vocals') vocalLabels.push(c.label);
-      if (ck === 'era') eraLabels.push(c.label);
-      if (ck === 'rhythm') rhythmLabels.push(c.label);
     });
   });
 
-  // Build English prompt
-  const parts = [];
+  applyGenreRuleBoosts(genreWeights, selectedIds);
 
-  if (purposeLabels.length > 0) {
-    parts.push(purposeLabels.join(' and ') + (purposeLabels.length > 1 ? ' mood' : ' mood'));
-  }
-  if (emotionLabels.length > 0) {
-    parts.push(emotionLabels.join(' and '));
-  }
-  if (paletteLabels.length > 0) {
-    parts.push('featuring ' + paletteLabels.join(', '));
-  }
-  if (vocalLabels.length > 0) {
-    parts.push(vocalLabels.join(' and ') + ' vocals');
-  }
-  if (rhythmLabels.length > 0) {
-    parts.push(rhythmLabels.join(', '));
-  }
-  if (eraLabels.length > 0) {
-    parts.push(eraLabels.join(', ') + ' aesthetic');
-  }
+  const purposeTags = groupedCards.purpose.map(c => c.tags[0]).filter(Boolean);
+  const emotionTags = groupedCards.emotion.map(c => c.tags[0]).filter(Boolean);
+  const rhythmTags = groupedCards.rhythm.map(c => c.tags[0]).filter(Boolean);
+  const paletteTags = groupedCards.palette.map(c => c.tags[0]).filter(Boolean);
+  const vocalTags = groupedCards.vocals.map(c => c.tags[0]).filter(Boolean);
+  const eraTags = groupedCards.era.map(c => c.tags[0]).filter(Boolean);
 
-  let prompt = '';
-  if (parts.length > 0) {
-    prompt = parts.join(', ') + '.';
-    prompt = prompt.charAt(0).toUpperCase() + prompt.slice(1);
-  }
+  const intro = purposeTags.length ? `${joinNatural(purposeTags)} track` : 'Cinematic music concept';
+  const mood = emotionTags.length ? `with ${joinNatural(emotionTags)} emotional tone` : '';
+  const movement = rhythmTags.length ? `driven by ${joinNatural(rhythmTags)}` : '';
+  const sound = paletteTags.length ? `built around ${joinNatural(paletteTags)}` : '';
+  const voice = state.negativeTags.includes('no_vocals') ? 'instrumental arrangement only' : (vocalTags.length ? `featuring ${joinNatural(vocalTags)}` : '');
+  const era = eraTags.length ? `framed in ${joinNatural(eraTags)} aesthetics` : '';
+  const struct = structureText ? `following ${structureText}` : '';
 
-  // Add detailed tags for richness
-  if (allTags.length > 0) {
-    const uniqueTags = [...new Set(allTags)];
-    prompt += ' ' + uniqueTags.join(', ') + '.';
-  }
+  const conflictNotes = COMPOSER.conflictRules
+    .filter(rule => state.negativeTags.includes(rule.negative))
+    .filter(rule => (!rule.selectedCats || rule.selectedCats.some(cat => state.selections[cat]?.length)) &&
+      (!rule.selectedIds || rule.selectedIds.some(id => selectedIds.has(id))))
+    .map(rule => rule.message);
 
-  if (!prompt) prompt = 'Experimental composition with atmospheric sound design.';
+  const phrases = [intro, mood, sound, voice, movement, era, struct].filter(Boolean);
+  let prompt = phrases.join(', ') + '.';
+  const productionNotes = conflictNotes.length ? joinNatural([...new Set(conflictNotes)]) : 'balanced mix, clear dynamics, and spacious stereo depth';
+  if (conflictNotes.length) prompt += ` Production notes: ${productionNotes}.`;
+  const detailTags = [...new Set(allTags)].slice(0, 10);
+  const styleTagsText = detailTags.length ? detailTags.join(', ') : '—';
+  if (detailTags.length) prompt += ` Style tags: ${styleTagsText}.`;
 
   state.prompt = prompt;
 
@@ -973,13 +1049,8 @@ function generate() {
   // Genres
   const genres = Object.entries(genreWeights).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([g]) => g);
 
-  // BPM
-  let bpmStr = '—';
-  if (allBPMs.length > 0) {
-    let mn = 0, mx = 0;
-    allBPMs.forEach(([a, b]) => { mn += a; mx += b; });
-    bpmStr = Math.round(mn / allBPMs.length) + '-' + Math.round(mx / allBPMs.length);
-  }
+  // BPM (priority: rhythm -> purpose -> emotion)
+  const bpmStr = computeBpmSuggestion(groupedCards, allBPMs);
 
   // Structure
   const structStr = structureText || '—';
@@ -988,6 +1059,8 @@ function generate() {
   const out = $('outputSection');
   out.classList.add('visible');
   $('outputText').textContent = prompt;
+  $('styleTagsText').textContent = styleTagsText;
+  $('prodNotesText').textContent = productionNotes;
   $('bpmMeta').textContent = bpmStr;
   $('structMeta').textContent = structStr;
 
@@ -1053,4 +1126,3 @@ document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
-
