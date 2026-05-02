@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Your Sound</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #08080c;
+  --bg-elevated: #111118;
+  --bg-card: #16161f;
+  --bg-card-hover: #1c1c28;
+  --bg-card-selected: #1a1530;
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.12);
+  --border-selected: rgba(139,92,246,0.35);
+  --accent: #8b5cf6;
+  --accent-dim: rgba(139,92,246,0.15);
+  --accent-glow: rgba(139,92,246,0.25);
+  --text: #e8e8ef;
+  --text-secondary: #8888a0;
+  --text-muted: #555568;
+  --radius: 12px;
+  --radius-lg: 16px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+
+.header h1 span { color: var(--accent); }
+
+.header p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+/* Presets */
+.presets-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+}
+
+.presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.preset-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.preset-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-dim);
+}
+
+/* Progress */
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 2rem;
+  padding: 0 0.5rem;
+}
+
+.progress-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: transparent;
+}
+
+.progress-dot.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.progress-dot.done {
+  border-color: var(--accent);
+  color: white;
+  background: var(--accent);
+}
+
+.progress-line {
+  width: 20px;
+  height: 1.5px;
+  background: var(--border);
+  transition: background 0.25s ease;
+}
+
+.progress-line.done { background: var(--accent); }
+
+/* Steps */
+.step-section {
+  display: none;
+}
+
+.step-section.active {
+  display: block;
+  animation: fadeUp 0.35s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-header {
+  margin-bottom: 1.5rem;
+}
+
+.step-tag {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.step-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.3rem;
+}
+
+.step-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 700px) {
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .cards-grid { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.card.selected {
+  border-color: var(--border-selected);
+  background: var(--bg-card-selected);
+}
+
+.card.selected::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 11px;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  z-index: 1;
+}
+
+.card-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.card-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Navigation */
+.nav-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn {
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0.45rem 0.8rem;
+}
+
+.btn-ghost:hover { color: #ef4444; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #7c3aed;
+}
+
+/* Negative section */
+.negative-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: none;
+}
+
+.negative-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.negative-section > p {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.negative-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.negative-pill {
+  padding: 0.4rem 0.9rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.negative-pill:hover {
+  border-color: rgba(239,68,68,0.4);
+  color: var(--text);
+}
+
+.negative-pill.selected {
+  border-color: rgba(239,68,68,0.5);
+  background: rgba(239,68,68,0.1);
+  color: #fca5a5;
+}
+
+/* Output */
+.output-section {
+  margin-top: 2.5rem;
+  display: none;
+}
+
+.output-section.visible {
+  display: block;
+  animation: fadeUp 0.4s ease forwards;
+}
+
+.output-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+.output-box label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.6rem;
+}
+
+.output-text {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--text);
+  min-height: 40px;
+  margin-bottom: 1rem;
+}
+
+.output-meta-row {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.meta-block label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.meta-value {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.genre-pills {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.genre-pill {
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-selected);
+  font-size: 0.7rem;
+  color: #c4b5fd;
+  font-weight: 500;
+}
+
+.output-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.copy-btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.copy-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text);
+}
+
+.copy-btn.done {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.neg-output {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.neg-output label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.neg-text {
+  font-size: 0.82rem;
+  color: #fca5a5;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-80px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  z-index: 200;
+  transition: transform 0.3s ease;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <h1>Build Your <span>Sound</span></h1>
+    <p>Конфигуратор промптов для Suno v5</p>
+  </header>
+
+  <div class="presets-label">Пресеты</div>
+  <div class="presets-row" id="presetsRow"></div>
+
+  <nav class="progress" id="progress"></nav>
+
+  <div id="stepsContainer"></div>
+
+  <section class="negative-section" id="negativeSection">
+    <h3>Исключить элементы</h3>
+    <p>Отметьте то, что не должно присутствовать в треке</p>
+    <div class="negative-pills" id="negativePills"></div>
+  </section>
+
+  <div class="nav-row">
+    <button class="btn btn-ghost" id="resetBtn">Сбросить всё</button>
+    <div style="display:flex; gap:0.6rem;">
+      <button class="btn btn-outline" id="prevBtn" style="display:none;">← Назад</button>
+      <button class="btn btn-primary" id="nextBtn">Далее →</button>
+    </div>
+  </div>
+
+  <section class="output-section" id="outputSection">
+    <div class="output-box">
+      <label>Промпт для Suno v5</label>
+      <div class="output-text" id="outputText"></div>
+      <div class="output-meta-row">
+        <div class="meta-block">
+          <label>BPM</label>
+          <div class="meta-value" id="bpmMeta">—</div>
+        </div>
+        <div class="meta-block">
+          <label>Структура</label>
+          <div class="meta-value" id="structMeta">—</div>
+        </div>
+        <div class="meta-block">
+          <label>Жанры</label>
+          <div class="genre-pills" id="genrePills"></div>
+        </div>
+      </div>
+      <div class="neg-output" id="negOutput" style="display:none;">
+        <label>Negative prompt</label>
+        <div class="neg-text" id="negText"></div>
+      </div>
+      <div class="output-actions">
+        <button class="copy-btn" id="copyPromptBtn">Копировать промпт</button>
+        <button class="copy-btn" id="copyNegBtn">Копировать negative</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = {
+  categories: {
+    purpose: {
+      key: "purpose", step: 1, title: "Какова цель музыки?", desc: "Определите основное настроение трека",
+      cards: [
+        { id:"energetic", label:"Энергичная", desc:"Высокая энергия и драйв", tags:["energetic","high energy","driving force"], genres:{"EDM":2,"Electro":1}, bpm:[120,140] },
+        { id:"emotional", label:"Эмоциональная", desc:"Глубокие чувства и переживания", tags:["emotional","deep feeling","expressive"], genres:{"Pop":2,"Ballad":1}, bpm:[70,100] },
+        { id:"dreamy", label:"Мечтательная", desc:"Парящая атмосферная текстура", tags:["dreamy textures","ethereal atmosphere","soft emotional layering"], genres:{"Dream Pop":2,"Ambient Pop":1}, bpm:[65,90] },
+        { id:"aggressive", label:"Агрессивная", desc:"Мощная и дерзкая подача", tags:["aggressive","intense","hard-hitting"], genres:{"Hard Rock":2,"Industrial":1}, bpm:[130,170] },
+        { id:"hypnotic", label:"Гипнотическая", desc:"Завораживающие зацикленные паттерны", tags:["hypnotic","mesmerizing","repetitive trance-like"], genres:{"Techno":2,"Trance":1}, bpm:[120,135] },
+        { id:"uplifting", label:"Вдохновляющая", desc:"Поднимающее настроение звучание", tags:["uplifting","euphoric","inspiring"], genres:{"Trance":2,"Pop":1}, bpm:[115,130] },
+        { id:"dark", label:"Тёмная", desc:"Мрачная и атмосферная подача", tags:["dark","moody","shadowy atmosphere"], genres:{"Dark Wave":2,"Industrial":1}, bpm:[90,120] },
+        { id:"calm", label:"Спокойная", desc:"Умиротворяющее звучание", tags:["calm","relaxing","gentle"], genres:{"Ambient":2,"Chillout":1}, bpm:[60,80] },
+        { id:"cinematic", label:"Кинематографичная", desc:"Эпическое масштабное звучание", tags:["cinematic","epic","grand orchestral feel"], genres:{"Film Score":2,"Orchestral":1}, bpm:[70,110] },
+        { id:"intimate", label:"Интимная", desc:"Камерное и близкое звучание", tags:["intimate","close","personal"], genres:{"Singer-Songwriter":2,"Indie Folk":1}, bpm:[65,85] }
+      ]
+    },
+    emotion: {
+      key: "emotion", step: 2, title: "Какое ощущение должно вызывать?", desc: "Эмоциональная текстура трека",
+      cards: [
+        { id:"warm", label:"Тёплая", desc:"Уютное ламповое звучание", tags:["warm tones","cozy production","organic warmth"], genres:{"Indie":1,"Soul":1}, bpm:[70,100] },
+        { id:"cold", label:"Холодная", desc:"Стерильная кристальная атмосфера", tags:["cold atmosphere","crystalline","minimal warmth"], genres:{"Minimal Techno":1,"Ambient":1}, bpm:[80,110] },
+        { id:"nostalgic", label:"Ностальгическая", desc:"Отсылки к прошлому", tags:["nostalgic","retro feel","wistful"], genres:{"Synth-pop":2,"Retrowave":1}, bpm:[80,110] },
+        { id:"euphoric", label:"Эйфорическая", desc:"Взрывная радость", tags:["euphoric","blissful","peak emotional"], genres:{"Trance":2,"Progressive House":1}, bpm:[125,138] },
+        { id:"melancholic", label:"Меланхоличная", desc:"Грустная и задумчивая", tags:["melancholic","bittersweet","reflective"], genres:{"Indie":2,"Sad Pop":1}, bpm:[60,85] },
+        { id:"sensual", label:"Чувственная", desc:"Бархатистая и соблазнительная", tags:["sensual","smooth","sultry"], genres:{"R&B":2,"Neo-Soul":1}, bpm:[70,95] },
+        { id:"tense", label:"Напряжённая", desc:"Саспенс и ожидание", tags:["tense","suspenseful","building pressure"], genres:{"Dark Ambient":1,"Industrial":1}, bpm:[100,130] },
+        { id:"floating", label:"Парящая", desc:"Лёгкость и невесомость", tags:["floating","weightless","airy"], genres:{"Ambient":2,"Dream Pop":1}, bpm:[50,80] },
+        { id:"romantic", label:"Романтичная", desc:"Любовная и нежная", tags:["romantic","tender","loving"], genres:{"R&B":1,"Pop":1}, bpm:[65,90] },
+        { id:"mysterious", label:"Загадочная", desc:"Мистическая и таинственная", tags:["mysterious","enigmatic","shadowy"], genres:{"Dark Pop":1,"Trip-Hop":1}, bpm:[80,105] }
+      ]
+    },
+    rhythm: {
+      key: "rhythm", step: 3, title: "Как движется музыка?", desc: "Ритмическая структура и энергия",
+      cards: [
+        { id:"steady_groove", label:"Стабильный грув", desc:"Ровный качающий ритм", tags:["steady groove","groovy","four-on-the-floor feel"], genres:{"Funk":1,"Disco":1}, bpm:[95,115] },
+        { id:"gradual_build", label:"Постепенный разгон", desc:"Нарастающая энергия", tags:["gradual build","crescendo","rising energy"], genres:{"Progressive":2,"Trance":1}, bpm:[115,130] },
+        { id:"explosive_drops", label:"Взрывные дропы", desc:"Резкие контрасты", tags:["explosive drops","heavy bass drops","impact"], genres:{"Dubstep":2,"Bass":1}, bpm:[140,175] },
+        { id:"broken_rhythm", label:"Ломаный ритм", desc:"Нестандартная ритмическая сетка", tags:["broken beat","irregular rhythm","complex patterns"], genres:{"IDM":2,"Breakbeat":1}, bpm:[120,150] },
+        { id:"syncopated", label:"Синкопированный грув", desc:"Смещённые акценты", tags:["syncopated","offbeat accents","groove-oriented"], genres:{"Funk":2,"Jazz-Fusion":1}, bpm:[90,110] },
+        { id:"floating_ambient", label:"Парящий эмбиент", desc:"Без чёткого ритма", tags:["free-flowing","ambient rhythm","no fixed pulse"], genres:{"Ambient":2,"Drone":1}, bpm:[40,70] },
+        { id:"fast_paced", label:"Быстрый темп", desc:"Высокая скорость", tags:["fast-paced","rapid","driving tempo"], genres:{"Drum & Bass":2,"Hardcore":1}, bpm:[160,190] },
+        { id:"minimal_repetitive", label:"Минимал-повтор", desc:"Зацикленные паттерны", tags:["minimal","repetitive","hypnotic loop"], genres:{"Minimal":2,"Techno":1}, bpm:[115,130] },
+        { id:"beat_switches", label:"Смена ритмов", desc:"Переключение между секциями", tags:["beat switches","rhythmic variation","dynamic shifts"], genres:{"Hip-Hop":2,"Alternative":1}, bpm:[80,120] }
+      ]
+    },
+    palette: {
+      key: "palette", step: 4, title: "Что определяет звучание?", desc: "Ключевые инструменты и текстуры",
+      cards: [
+        { id:"analog_synths", label:"Аналоговые синты", desc:"Классические тёплые синт-звуки", tags:["analog synth layers","warm synth textures","vintage synthesizers"], genres:{"Synth-pop":2,"Retro":1} },
+        { id:"deep_sub_bass", label:"Глубокий суб-бас", desc:"Мощные низкие частоты", tags:["pulsating sub bass","deep bassline","low-end weight"], genres:{"Bass":2,"UK Garage":1} },
+        { id:"distorted_guitars", label:"Дисторшн-гитары", desc:"Тяжёлые перегруженные гитары", tags:["distorted guitars","heavy guitar riffs","crunchy tones"], genres:{"Rock":2,"Alternative":1} },
+        { id:"acoustic_guitar", label:"Акустическая гитара", desc:"Живое акустическое звучание", tags:["acoustic guitar","fingerpicked","organic strings"], genres:{"Folk":2,"Indie":1} },
+        { id:"intimate_piano", label:"Интимное пианино", desc:"Близкое камерное пианино", tags:["intimate piano","felt piano","close-mic keys"], genres:{"Neo-Classical":2,"Ambient":1} },
+        { id:"live_drums", label:"Живые барабаны", desc:"Натуральная ударная установка", tags:["live drums","acoustic drum kit","organic percussion"], genres:{"Rock":2,"Jazz":1} },
+        { id:"vinyl_crackle", label:"Виниловый треск", desc:"Аналоговый шум и текстура", tags:["vinyl crackle","lo-fi texture","tape warmth"], genres:{"Lo-Fi":2,"Hip-Hop":1} },
+        { id:"atmospheric_pads", label:"Атмосферные пэды", desc:"Объёмные пространственные текстуры", tags:["atmospheric pads","ambient layers","spatial soundscapes"], genres:{"Ambient":2,"Shoegaze":1} },
+        { id:"cinematic_strings", label:"Кинематографичные струнные", desc:"Эпические оркестровые струнные", tags:["cinematic strings","orchestral arrangements","sweeping violins"], genres:{"Film Score":2,"Orchestral":1} },
+        { id:"organic_textures", label:"Органические текстуры", desc:"Природные и естественные звуки", tags:["organic textures","natural sounds","field recordings"], genres:{"World":1,"Ambient":1} },
+        { id:"brass_stabs", label:"Духовые стабы", desc:"Резкие акценты духовых", tags:["brass stabs","horn hits","bold brass"], genres:{"Funk":2,"Ska":1} },
+        { id:"glitch_textures", label:"Глитч-текстуры", desc:"Цифровые артефакты", tags:["glitch textures","digital artifacts","bitcrushed"], genres:{"Glitch":2,"IDM":1} }
+      ]
+    },
+    vocals: {
+      key: "vocals", step: 5, title: "Каким должен быть вокал?", desc: "Тип вокальной подачи",
+      cards: [
+        { id:"airy_female", label:"Воздушный женский", desc:"Лёгкий эфирный женский вокал", tags:["airy female vocals","ethereal singing","soft female voice"], genres:{"Dream Pop":2,"Indie":1} },
+        { id:"soulful_male", label:"Соул мужской", desc:"Душевный мужской вокал", tags:["soulful male vocals","warm male voice","expressive singing"], genres:{"Soul":2,"R&B":1} },
+        { id:"whispery", label:"Шёпотный", desc:"Тихий интимный шёпот", tags:["whispery vocals","breathy delivery","soft spoken"], genres:{"Indie":1,"Ambient Pop":1} },
+        { id:"aggressive_rap", label:"Агрессивный рэп", desc:"Мощная речитативная подача", tags:["aggressive rap flow","hard-hitting bars","intense delivery"], genres:{"Hip-Hop":2,"Trap":1} },
+        { id:"layered_harmonies", label:"Многослойные гармонии", desc:"Сложные вокальные наложения", tags:["layered harmonies","rich vocal stacks","choral layering"], genres:{"Pop":2,"R&B":1} },
+        { id:"theatrical", label:"Театральный", desc:"Драматичный сценический вокал", tags:["theatrical vocals","dramatic delivery","expressive range"], genres:{"Art Rock":1,"Musical":1} },
+        { id:"intimate_solo", label:"Интимный сольный", desc:"Один голос близко к микрофону", tags:["intimate solo vocal","close-mic singing","raw emotional vocal"], genres:{"Singer-Songwriter":2,"Indie Folk":1} },
+        { id:"autotuned", label:"Автотюн", desc:"Роботизированная обработка", tags:["auto-tuned vocals","robotic pitch correction","modern vocal processing"], genres:{"Trap":2,"Pop":1} },
+        { id:"choir", label:"Хор", desc:"Групповой хоровой вокал", tags:["choir vocals","group singing","choral arrangement"], genres:{"Gospel":1,"Orchestral":1} },
+        { id:"spoken", label:"Разговорный", desc:"Спокойная разговорная подача", tags:["spoken conversational","narrative delivery","spoken word"], genres:{"Lo-Fi":1,"Alternative":1} }
+      ]
+    },
+    era: {
+      key: "era", step: 6, title: "В какой эпохе это звучит?", desc: "Эстетическая эпоха и окружение",
+      cards: [
+        { id:"retro_70s", label:"Ретро 70-е", desc:"Диско, фанк, классический рок", tags:["1970s aesthetic","retro 70s","classic warm production"], genres:{"Disco":2,"Funk":1} },
+        { id:"retro_80s", label:"Ретро 80-е", desc:"Синтвейв, новая волна", tags:["1980s aesthetic","retro 80s","synthwave production"], genres:{"Synth-pop":2,"Retrowave":1} },
+        { id:"nineties_gritty", label:"90-е гранж", desc:"Грязный и сырой звук", tags:["1990s gritty","lo-fi 90s","raw production"], genres:{"Grunge":2,"Alternative Rock":1} },
+        { id:"y2k_glossy", label:"Y2K глянец", desc:"Блестящее поп-звучание 2000-х", tags:["Y2K glossy","2000s pop production","shiny polished"], genres:{"Pop":2,"Eurodance":1} },
+        { id:"modern_clean", label:"Современный чистый", desc:"Чистое цифровое звучание", tags:["modern clean production","crisp digital","contemporary"], genres:{"Modern Pop":2,"EDM":1} },
+        { id:"futuristic", label:"Футуристический", desc:"Звук будущего", tags:["futuristic","sci-fi production","forward-thinking sound design"], genres:{"Future Bass":2,"Hyperpop":1} },
+        { id:"analog_vintage", label:"Аналоговый винтаж", desc:"Тёплое аналоговое звучание", tags:["analog vintage","tape saturation","warm retro feel"], genres:{"Lo-Fi":2,"Vintage Soul":1} },
+        { id:"indie_bedroom", label:"Инди-спальня", desc:"Камерный домашний звук", tags:["indie bedroom production","DIY aesthetic","intimate home recording"], genres:{"Indie":2,"Bedroom Pop":1} },
+        { id:"dark_club", label:"Тёмный клуб", desc:"Ночное клубное звучание", tags:["dark club","underground club","late-night vibes"], genres:{"Techno":2,"Dark House":1} },
+        { id:"festival_edm", label:"Фестивальный EDM", desc:"Масштабное фестивальное звучание", tags:["festival EDM","arena-ready","massive production"], genres:{"EDM":2,"Big Room":1} }
+      ]
+    },
+    structure: {
+      key: "structure", step: 7, title: "Как развивается трек?", desc: "Структура композиции", multi: false,
+      cards: [
+        { id:"verse_chorus", label:"Куплет-Припев", desc:"Классическая поп-структура", tags:["verse-chorus structure","classic songwriting","repeating hook"], genres:{"Pop":2}, structure:"Verse → Chorus → Verse → Chorus → Bridge → Chorus" },
+        { id:"build_drop", label:"Билд-Дроп", desc:"Нарастание → сброс энергии", tags:["build-drop structure","EDM arrangement","energy release"], genres:{"EDM":2,"Dubstep":1}, structure:"Intro → Build-Up → Drop → Breakdown → Build → Drop → Outro" },
+        { id:"gradual_layering", label:"Постепенное наслоение", desc:"Добавление слоёв", tags:["gradual layering","progressive arrangement","slow build"], genres:{"Progressive":2,"Ambient":1}, structure:"Intro → Layer 1 → Layer 2 → Layer 3 → Peak → Fade" },
+        { id:"minimal_loop", label:"Минимал-петля", desc:"Зацикленная структура", tags:["minimal loop structure","repetitive form","meditative"], genres:{"Minimal":2,"Techno":1}, structure:"Loop A → Loop A+Layer → Loop A → Loop B → Loop A" },
+        { id:"beat_switch", label:"Смена битов", desc:"Переключение ритмов", tags:["beat switch structure","dynamic arrangement","section contrast"], genres:{"Hip-Hop":2,"Alternative":1}, structure:"Verse A → Chorus → Verse B (different beat) → Chorus → Outro" },
+        { id:"jam_progression", label:"Джем-прогрессия", desc:"Свободное развитие", tags:["jam progression","improvisational structure","live feel"], genres:{"Jazz-Rock":1,"Funk":1}, structure:"Theme → Solo Section → Group Jam → Theme → Outro" },
+        { id:"ambient_evolution", label:"Эмбиент-эволюция", desc:"Плавная трансформация", tags:["ambient evolution","slow transformation","organic development"], genres:{"Ambient":2,"Drone":1}, structure:"Texture A → Morph → Texture B → Dissolve → Silence" },
+        { id:"anthemic", label:"Антемическая", desc:"Масштабная эскалация", tags:["anthemic escalation","epic build","grand finale"], genres:{"Rock":2,"EDM":1}, structure:"Intro → Verse → Pre-Chorus → Chorus → Bridge → Epic Finale" }
+      ]
+    }
+  },
+  negativeTags: [
+    { id:"no_trap_hats", label:"Без трэп-хэтов", tag:"no trap hats" },
+    { id:"no_orchestral", label:"Без оркестра", tag:"no orchestral elements" },
+    { id:"no_aggressive_drums", label:"Без агрессивных барабанов", tag:"no aggressive drums" },
+    { id:"no_autotune", label:"Без автотюна", tag:"no autotune" },
+    { id:"no_heavy_distortion", label:"Без тяжёлого дисторшна", tag:"no heavy distortion" },
+    { id:"no_edm_drops", label:"Без EDM-дропов", tag:"no EDM drops" },
+    { id:"no_vocals", label:"Без вокала", tag:"no vocals" },
+    { id:"minimal_percussion", label:"Минимум перкуссии", tag:"minimal percussion" },
+    { id:"avoid_bright_synths", label:"Избегать ярких синтов", tag:"avoid bright synths" }
+  ],
+  presets: {
+    night_drive: { name:"Night Drive", s:{purpose:["dreamy"],emotion:["nostalgic"],rhythm:["steady_groove"],palette:["analog_synths","deep_sub_bass"],vocals:["airy_female"],era:["retro_80s"],structure:["gradual_layering"]} },
+    dream_pop: { name:"Dream Pop", s:{purpose:["dreamy"],emotion:["floating"],rhythm:["floating_ambient"],palette:["atmospheric_pads","vinyl_crackle"],vocals:["whispery"],era:["indie_bedroom"],structure:["ambient_evolution"]} },
+    dark_trap: { name:"Dark Trap", s:{purpose:["aggressive"],emotion:["dark"],rhythm:["beat_switches"],palette:["deep_sub_bass","glitch_textures"],vocals:["aggressive_rap"],era:["dark_club"],structure:["build_drop"]} },
+    indie_nostalgia: { name:"Indie Nostalgia", s:{purpose:["emotional"],emotion:["nostalgic"],rhythm:["steady_groove"],palette:["acoustic_guitar","vinyl_crackle"],vocals:["intimate_solo"],era:["analog_vintage"],structure:["verse_chorus"]} },
+    festival_edm: { name:"Festival EDM", s:{purpose:["energetic","uplifting"],emotion:["euphoric"],rhythm:["explosive_drops"],palette:["analog_synths"],vocals:["layered_harmonies"],era:["festival_edm"],structure:["build_drop"]} },
+    cinematic_ambient: { name:"Cinematic Ambient", s:{purpose:["cinematic","calm"],emotion:["mysterious"],rhythm:["floating_ambient"],palette:["cinematic_strings","atmospheric_pads"],vocals:["choir"],era:["modern_clean"],structure:["ambient_evolution"]} },
+    sad_bedroom_pop: { name:"Sad Bedroom Pop", s:{purpose:["intimate"],emotion:["melancholic"],rhythm:["minimal_repetitive"],palette:["intimate_piano","organic_textures"],vocals:["whispery"],era:["indie_bedroom"],structure:["verse_chorus"]} }
+  }
+};
+
+const state = {
+  currentStep: 0,
+  selections: { purpose:[], emotion:[], rhythm:[], palette:[], vocals:[], era:[], structure:[] },
+  negativeTags: [],
+  totalSteps: 7,
+  prompt: "",
+  negativePrompt: ""
+};
+
+const catOrder = ['purpose','emotion','rhythm','palette','vocals','era','structure'];
+
+const $ = id => document.getElementById(id);
+
+function init() {
+  renderPresets();
+  renderProgress();
+  renderSteps();
+  renderNegative();
+  bindEvents();
+}
+
+function renderPresets() {
+  const row = $('presetsRow');
+  row.innerHTML = '';
+  for (const [key, p] of Object.entries(DATA.presets)) {
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.textContent = p.name;
+    b.addEventListener('click', () => applyPreset(key));
+    row.appendChild(b);
+  }
+}
+
+function renderProgress() {
+  const bar = $('progress');
+  bar.innerHTML = '';
+  for (let i = 0; i < state.totalSteps; i++) {
+    const d = document.createElement('div');
+    d.className = 'progress-dot';
+    d.textContent = i + 1;
+    d.addEventListener('click', () => goToStep(i));
+    bar.appendChild(d);
+    if (i < state.totalSteps - 1) {
+      const l = document.createElement('div');
+      l.className = 'progress-line';
+      bar.appendChild(l);
+    }
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const dots = $('progress').querySelectorAll('.progress-dot');
+  const lines = $('progress').querySelectorAll('.progress-line');
+  dots.forEach((d, i) => {
+    d.classList.remove('active','done');
+    if (i === state.currentStep) d.classList.add('active');
+    else if (i < state.currentStep) d.classList.add('done');
+  });
+  lines.forEach((l, i) => l.classList.toggle('done', i < state.currentStep));
+}
+
+function renderSteps() {
+  const container = $('stepsContainer');
+  container.innerHTML = '';
+  catOrder.forEach((key, idx) => {
+    const cat = DATA.categories[key];
+    const sec = document.createElement('div');
+    sec.className = 'step-section';
+    sec.id = 'step-' + idx;
+    let cardsHTML = '';
+    cat.cards.forEach(c => {
+      cardsHTML += `<div class="card" data-cat="${key}" data-id="${c.id}" data-label="${c.label}" onclick="toggleCard('${key}','${c.id}',this)"><div class="card-label">${c.label}</div><div class="card-desc">${c.desc}</div></div>`;
+    });
+    sec.innerHTML = `<div class="step-header"><div class="step-tag">Шаг ${cat.step}</div><h2 class="step-title">${cat.title}</h2><div class="step-desc">${cat.desc}</div></div><div class="cards-grid">${cardsHTML}</div>`;
+    container.appendChild(sec);
+  });
+  showStep(0);
+}
+
+function renderNegative() {
+  const grid = $('negativePills');
+  grid.innerHTML = '';
+  DATA.negativeTags.forEach(nt => {
+    const b = document.createElement('button');
+    b.className = 'negative-pill';
+    b.textContent = nt.label;
+    b.addEventListener('click', () => toggleNeg(nt.id, b));
+    grid.appendChild(b);
+  });
+}
+
+function showStep(idx) {
+  document.querySelectorAll('.step-section').forEach((s, i) => {
+    s.classList.toggle('active', i === idx);
+  });
+  updateProgress();
+  updateNav();
+}
+
+function updateNav() {
+  $('prevBtn').style.display = state.currentStep > 0 ? '' : 'none';
+  $('nextBtn').textContent = state.currentStep >= state.totalSteps - 1 ? 'Готово' : 'Далее →';
+}
+
+function toggleCard(catKey, cardId, el) {
+  const cat = DATA.categories[catKey];
+  const arr = state.selections[catKey];
+  const i = arr.indexOf(cardId);
+  if (i > -1) {
+    arr.splice(i, 1);
+    el.classList.remove('selected');
+  } else {
+    if (!cat.multi && cat.multi !== undefined) {
+      state.selections[catKey] = [cardId];
+      el.parentElement.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+    }
+    arr.push(cardId);
+    el.classList.add('selected');
+  }
+  generate();
+}
+
+function toggleNeg(tagId, el) {
+  const i = state.negativeTags.indexOf(tagId);
+  if (i > -1) { state.negativeTags.splice(i, 1); el.classList.remove('selected'); }
+  else { state.negativeTags.push(tagId); el.classList.add('selected'); }
+  generate();
+}
+
+function applyPreset(key) {
+  const p = DATA.presets[key];
+  if (!p) return;
+  catOrder.forEach(k => state.selections[k] = []);
+  state.negativeTags = [];
+  for (const [ck, ids] of Object.entries(p.s)) state.selections[ck] = [...ids];
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.negative-pill').forEach(c => c.classList.remove('selected'));
+  catOrder.forEach(ck => {
+    state.selections[ck].forEach(id => {
+      const el = document.querySelector(`.card[data-cat="${ck}"][data-id="${id}"]`);
+      if (el) el.classList.add('selected');
+    });
+  });
+  state.currentStep = 0;
+  showStep(0);
+  generate();
+  toast(`Пресет "${p.name}" применён`);
+}
+
+function goToStep(i) {
+  if (i < 0 || i >= state.totalSteps) return;
+  state.currentStep = i;
+  showStep(i);
+}
+
+function goNext() {
+  if (state.currentStep < state.totalSteps - 1) {
+    state.currentStep++;
+    showStep(state.currentStep);
+    if (state.currentStep === state.totalSteps - 1) {
+      $('negativeSection').style.display = '';
+    }
+  } else {
+    $('negativeSection').style.display = '';
+    generate();
+  }
+}
+
+function goPrev() {
+  if (state.currentStep > 0) {
+    state.currentStep--;
+    showStep(state.currentStep);
+  }
+}
+
+function resetAll() {
+  catOrder.forEach(k => state.selections[k] = []);
+  state.negativeTags = [];
+  state.currentStep = 0;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.negative-pill').forEach(c => c.classList.remove('selected'));
+  showStep(0);
+  $('outputSection').classList.remove('visible');
+  $('negativeSection').style.display = 'none';
+  generate();
+  toast('Сброшено');
+}
+
+function getCard(catKey, cardId) {
+  return DATA.categories[catKey].cards.find(c => c.id === cardId);
+}
+
+function generate() {
+  const genreWeights = {};
+  const allBPMs = [];
+  const allTags = [];
+  const purposeLabels = [];
+  const emotionLabels = [];
+  const paletteLabels = [];
+  const vocalLabels = [];
+  const eraLabels = [];
+  const rhythmLabels = [];
+  let structureText = '';
+
+  catOrder.forEach(ck => {
+    state.selections[ck].forEach(id => {
+      const c = getCard(ck, id);
+      if (!c) return;
+      c.tags.forEach(t => allTags.push(t));
+      if (c.genres) {
+        for (const [g, w] of Object.entries(c.genres)) {
+          genreWeights[g] = (genreWeights[g] || 0) + w;
+        }
+      }
+      if (c.bpm) allBPMs.push(c.bpm);
+      if (c.structure) structureText = c.structure;
+
+      if (ck === 'purpose') purposeLabels.push(c.label);
+      if (ck === 'emotion') emotionLabels.push(c.label);
+      if (ck === 'palette') paletteLabels.push(c.label);
+      if (ck === 'vocals') vocalLabels.push(c.label);
+      if (ck === 'era') eraLabels.push(c.label);
+      if (ck === 'rhythm') rhythmLabels.push(c.label);
+    });
+  });
+
+  // Build English prompt
+  const parts = [];
+
+  if (purposeLabels.length > 0) {
+    parts.push(purposeLabels.join(' and ') + (purposeLabels.length > 1 ? ' mood' : ' mood'));
+  }
+  if (emotionLabels.length > 0) {
+    parts.push(emotionLabels.join(' and '));
+  }
+  if (paletteLabels.length > 0) {
+    parts.push('featuring ' + paletteLabels.join(', '));
+  }
+  if (vocalLabels.length > 0) {
+    parts.push(vocalLabels.join(' and ') + ' vocals');
+  }
+  if (rhythmLabels.length > 0) {
+    parts.push(rhythmLabels.join(', '));
+  }
+  if (eraLabels.length > 0) {
+    parts.push(eraLabels.join(', ') + ' aesthetic');
+  }
+
+  let prompt = '';
+  if (parts.length > 0) {
+    prompt = parts.join(', ') + '.';
+    prompt = prompt.charAt(0).toUpperCase() + prompt.slice(1);
+  }
+
+  // Add detailed tags for richness
+  if (allTags.length > 0) {
+    const uniqueTags = [...new Set(allTags)];
+    prompt += ' ' + uniqueTags.join(', ') + '.';
+  }
+
+  if (!prompt) prompt = 'Experimental composition with atmospheric sound design.';
+
+  state.prompt = prompt;
+
+  // Negative
+  state.negativePrompt = state.negativeTags.map(id => {
+    const nt = DATA.negativeTags.find(n => n.id === id);
+    return nt ? nt.tag : '';
+  }).filter(Boolean).join(', ');
+
+  // Genres
+  const genres = Object.entries(genreWeights).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([g]) => g);
+
+  // BPM
+  let bpmStr = '—';
+  if (allBPMs.length > 0) {
+    let mn = 0, mx = 0;
+    allBPMs.forEach(([a, b]) => { mn += a; mx += b; });
+    bpmStr = Math.round(mn / allBPMs.length) + '-' + Math.round(mx / allBPMs.length);
+  }
+
+  // Structure
+  const structStr = structureText || '—';
+
+  // Render output
+  const out = $('outputSection');
+  out.classList.add('visible');
+  $('outputText').textContent = prompt;
+  $('bpmMeta').textContent = bpmStr;
+  $('structMeta').textContent = structStr;
+
+  const pillsEl = $('genrePills');
+  pillsEl.innerHTML = '';
+  genres.forEach(g => {
+    const p = document.createElement('span');
+    p.className = 'genre-pill';
+    p.textContent = g;
+    pillsEl.appendChild(p);
+  });
+  if (genres.length === 0) {
+    pillsEl.innerHTML = '<span style="color:var(--text-muted);font-size:0.7rem;">—</span>';
+  }
+
+  if (state.negativePrompt) {
+    $('negOutput').style.display = '';
+    $('negText').textContent = state.negativePrompt;
+  } else {
+    $('negOutput').style.display = 'none';
+  }
+}
+
+function copyText(text, label) {
+  if (!text) { toast('Нечего копировать'); return; }
+  navigator.clipboard.writeText(text).then(() => toast(label + ' скопирован')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(label + ' скопирован');
+  });
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function bindEvents() {
+  $('nextBtn').addEventListener('click', goNext);
+  $('prevBtn').addEventListener('click', goPrev);
+  $('resetBtn').addEventListener('click', resetAll);
+  $('copyPromptBtn').addEventListener('click', () => {
+    copyText(state.prompt, 'Промпт');
+    $('copyPromptBtn').classList.add('done');
+    $('copyPromptBtn').textContent = 'Скопировано';
+    setTimeout(() => { $('copyPromptBtn').classList.remove('done'); $('copyPromptBtn').textContent = 'Копировать промпт'; }, 2000);
+  });
+  $('copyNegBtn').addEventListener('click', () => {
+    copyText(state.negativePrompt, 'Negative');
+    $('copyNegBtn').classList.add('done');
+    $('copyNegBtn').textContent = 'Скопировано';
+    setTimeout(() => { $('copyNegBtn').classList.remove('done'); $('copyNegBtn').textContent = 'Копировать negative'; }, 2000);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+
